@@ -22,7 +22,6 @@ class ExistenciasOrchestratorOptions:
     """
     fecha_contable: Optional[date] = None
 
-
 class ExistenciasProcessingOrchestrator:
     """
     Caso de uso de alto nivel:

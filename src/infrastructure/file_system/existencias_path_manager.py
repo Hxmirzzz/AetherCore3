@@ -23,7 +23,7 @@ class ExistenciasPathManager:
         cfg = get_existencias_settings()
         return cls(
             origen_planos=cfg.paths.origen_planos,
-            nacional_base=cfg.paths.nacional_base,
+            origen_nacional=cfg.paths.origen_nacional,
         )
 
     @property
@@ -40,7 +40,7 @@ class ExistenciasPathManager:
         Carpeta de salida para una fecha contable
         """
         sub = fecha.to_yymmdd()
-        return self.nacional_base / sub
+        return self.origen_nacional / sub
 
     def nacional_copias_folder_for_date(self, fecha: FechaContable) -> Path:
         """

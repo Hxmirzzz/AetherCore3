@@ -1,18 +1,21 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Iterable
+from typing import List
 import logging
 
 from src.infrastructure.file_system.existencias_path_manager import ExistenciasPathManager
 from src.domain.value_objects.fecha_contable import FechaContable
 from src.domain.value_objects.tipo_valor import TipoValor
 from src.domain.entities.existencias import (
+    PlanoExistenciasHeader,
+    PlanoExistenciasDetalle,
     ArchivoExistenciasOrigen,
-    RegistroDetalleExistencias,
+    DenominacionSaldo,
 )
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class ExistenciasTxtReader:
@@ -29,21 +32,30 @@ class ExistenciasTxtReader:
     def from_settings(cls) -> "ExistenciasTxtReader":
         return cls(ExistenciasPathManager.from_settings())
 
+    # --------------------------------------------------------------------- #
+    # LISTAR ARCHIVOS
+    # --------------------------------------------------------------------- #
     def listar_archivos_en_origen(self) -> List[Path]:
         """
-        Lista todos los .txt en la carpeta de PLANOS (no incluye gestionados).
+        Lista todos los .txt en la carpeta de PLANOS (no incluye 'gestionados').
         """
         base = self.path_manager.origen_planos
         if not base.exists():
             logger.warning("Carpeta de origen no existe: %s", base)
             return []
 
-        return sorted(p for p in base.iterdir() if p.is_file() and p.suffix.lower() == ".txt")
+        return sorted(
+            p for p in base.iterdir()
+            if p.is_file() and p.suffix.lower() == ".txt"
+        )
 
+    # --------------------------------------------------------------------- #
+    # LEER UN ARCHIVO
+    # --------------------------------------------------------------------- #
     def leer_archivo(self, path: Path) -> ArchivoExistenciasOrigen | None:
         """
         Lee un archivo de existencias y lo mapea a ArchivoExistenciasOrigen.
-        Si el formato es inválido, devuelve None (y loggea el problema).
+        Si el formato es inválido, devuelve None (y loguea el problema).
         """
         try:
             lines = path.read_text(encoding="utf-8").splitlines()
@@ -55,8 +67,10 @@ class ExistenciasTxtReader:
             logger.warning("Archivo vacío: %s", path)
             return None
 
-        header_line = None
+        header_parts: list[str] | None = None
         detail_lines: List[str] = []
+
+        # Separar 01 y 02
         for ln in lines:
             ln = ln.strip()
             if not ln:
@@ -64,32 +78,74 @@ class ExistenciasTxtReader:
             parts = ln.split(",")
             if not parts:
                 continue
+
             tipo = parts[0].strip()
-            if tipo == "01" and header_line is None:
-                header_line = parts
+            if tipo == "01" and header_parts is None:
+                header_parts = [p.strip() for p in parts]
             elif tipo == "02":
                 detail_lines.append(ln)
 
-        if header_line is None or not detail_lines:
-            logger.warning("Archivo inválido: %s", path)
+        if header_parts is None or not detail_lines:
+            logger.warning(
+                "Archivo inválido (falta 01 o no hay 02) en %s", path
+            )
             return None
 
+        # -------------------- CABECERA 01 -> PlanoExistenciasHeader -------- #
         try:
-            _, cod_dane, ciudad, fecha_str, transport, nit, cliente, cod_divisa, divisa, cod_fondo, nombre_fondo = header_line
+            (
+                _,
+                cod_dane,
+                ciudad,
+                fecha_str,
+                transport,
+                nit,
+                cliente,
+                cod_divisa,
+                divisa,
+                cod_fondo,
+                nombre_fondo,
+            ) = header_parts
         except ValueError:
-            logger.warning("Cabecera 01 con número de campos inválido en %s: %s", path, header_line)
+            logger.warning(
+                "Cabecera 01 con número de campos inválido en %s: %s",
+                path,
+                header_parts,
+            )
             return None
 
-        fecha_contable = FechaContable.from_ddmmyyyy(fecha_str.replace("/", ""))
-        tipo_valor = TipoValor.from_abreviatura(divisa.strip())
+        # fecha_str viene como '17/10/2025'
+        # Ajusta aquí según cómo implemente FechaContable.from_ddmmyyyy:
+        # si espera '17102025', usa fecha_str.replace("/", "")
+        fecha_cert = FechaContable.from_ddmmyyyy(fecha_str)
 
-        registros: List[RegistroDetalleExistencias] = []
+        header = PlanoExistenciasHeader(
+            tipo_registro="01",
+            codigo_dane_ciudad=cod_dane.strip(),
+            nombre_ciudad=ciudad.strip(),
+            fecha_certificado=fecha_cert,
+            codigo_transportadora=transport.strip(),
+            nit_cliente=nit.strip(),
+            nombre_cliente=cliente.strip(),
+            codigo_divisa=int(cod_divisa),
+            nombre_divisa=divisa.strip(),
+            codigo_fondo=int(cod_fondo),
+            nombre_fondo=nombre_fondo.strip(),
+        )
+
+        # -------------------- DETALLES 02 -> List[PlanoExistenciasDetalle] -- #
+        detalles: List[PlanoExistenciasDetalle] = []
 
         for ln in detail_lines:
             parts = [p.strip() for p in ln.split(",")]
-            if len(parts) < 21:
-                logger.warning("Registro 02 con número de campos inválido en %s: %s", path, ln)
+            if len(parts) < 21:  # 1..21 campos mínimo
+                logger.warning(
+                    "Registro 02 con número de campos inválido en %s: %s",
+                    path,
+                    ln,
+                )
                 continue
+
             try:
                 (
                     _,
@@ -100,48 +156,66 @@ class ExistenciasTxtReader:
                     *denom_y_cant,
                 ) = parts
             except ValueError:
-                logger.warning("Registro 02 con número de campos inválido en %s: %s", path, ln)
+                logger.warning(
+                    "Registro 02 con número de campos inválido en %s: %s",
+                    path,
+                    ln,
+                )
                 continue
 
-            denoms: List[tuple[int, int]] = []
+            # TipoValor desde el código
+            try:
+                tipo_valor = TipoValor.from_codigo(int(cod_tipo_valor))
+            except Exception:
+                logger.exception(
+                    "Error convirtiendo código de tipo valor '%s' en %s",
+                    cod_tipo_valor,
+                    path,
+                )
+                continue
+
+            # Denominaciones (hasta 8 pares valor/cantidad)
+            denominaciones: List[DenominacionSaldo] = []
             for i in range(0, min(len(denom_y_cant), 16), 2):
+                valor_str = denom_y_cant[i] if i < len(denom_y_cant) else ""
+                cant_str = denom_y_cant[i + 1] if i + 1 < len(denom_y_cant) else ""
+
                 try:
-                    val = int(denom_y_cant[i]) if denom_y_cant[i] else 0
+                    valor = int(valor_str) if valor_str else 0
                 except ValueError:
-                    val = 0
+                    valor = 0
                 try:
-                    cant = int(denom_y_cant[i + 1]) if denom_y_cant[i + 1] else 0
-                except (ValueError, IndexError):
-                    cant = 0
-                if val == 0 and cant == 0:
+                    cantidad = int(cant_str) if cant_str else 0
+                except ValueError:
+                    cantidad = 0
+
+                if valor == 0 and cantidad == 0:
                     continue
-                denoms.append((val, cant))
 
-            reg = RegistroDetalleExistencias(
-                cod_tipo_valor=int(cod_tipo_valor),
-                nombre_tipo_valor=nombre_tipo_valor,
-                cod_calidad=int(cod_calidad),
-                nombre_calidad=nombre_calidad,
-                denominaciones=denoms,
+                denominaciones.append(
+                    DenominacionSaldo(valor=valor, cantidad=cantidad)
+                )
+
+            detalle = PlanoExistenciasDetalle(
+                tipo_registro="02",
+                tipo_valor=tipo_valor,
+                nombre_tipo_valor=nombre_tipo_valor.strip(),
+                codigo_calidad=int(cod_calidad),
+                nombre_calidad=nombre_calidad.strip(),
+                denominaciones=denominaciones,
             )
-            registros.append(reg)
+            detalles.append(detalle)
 
-        if not registros:
-            logger.warning("Archivo %s no tiene registros 02 válidos", path)
+        if not detalles:
+            logger.warning(
+                "Archivo %s no tiene registros 02 válidos", path
+            )
             return None
 
-        return ArchivoExistenciasOrigen(
-            fecha_contable=fecha_contable,
-            tipo_valor=tipo_valor,
-            codigo_dane_ciudad=cod_dane.strip(),
-            nombre_ciudad=ciudad.strip(),
-            transportadora=transport.strip(),
-            nit_cliente=nit.strip(),
-            nombre_cliente=cliente.strip(),
-            codigo_divisa=int(cod_divisa),
-            nombre_divisa=divisa.strip(),
-            codigo_fondo=int(cod_fondo),
-            nombre_fondo=nombre_fondo.strip(),
-            registros=registros,
-            source_path=path,
+        # -------------------- Construir ArchivoExistenciasOrigen ------------ #
+        archivo = ArchivoExistenciasOrigen(
+            nombre_archivo=path.name,
+            header=header,
+            detalles=detalles,
         )
+        return archivo

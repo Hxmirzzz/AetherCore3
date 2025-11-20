@@ -42,7 +42,7 @@ def get_existencias_settings() -> ExistenciasSettings:
     return ExistenciasSettings(
         paths=ExistenciasPaths(
             origen_planos=Path(origen),
-            nacional_base=Path(nacional),
+            origen_nacional=Path(nacional),
             log_dir=Path(log_dir),
         )
     )

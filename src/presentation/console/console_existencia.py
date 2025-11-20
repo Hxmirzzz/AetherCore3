@@ -1,6 +1,6 @@
 from __future__ import annotations
 import argparse
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 import logging
 
@@ -33,7 +33,7 @@ def _parse_fecha_arg(fecha_str: str | None) -> date | None:
     fecha_str = fecha_str.strip()
     if len(fecha_str) == 6:
         # ddmmyy
-        return datetime.strptime(fecha_str, "%d%m%y").date()
+        return datetime.strptime(fecha_str, "%y%m%d").date()
     elif len(fecha_str) == 10 and "-" in fecha_str:
         # yyyy-mm-dd
         return datetime.strptime(fecha_str, "%Y-%m-%d").date()
@@ -52,7 +52,7 @@ def _extract_fecha_from_filename(nombre: str) -> date | None:
     stem = Path(nombre).stem.upper()
     try:
         raw = stem[4 + 3 : 4 + 3 + 6]  # 7..12
-        return datetime.strptime(raw, "%d%m%y").date()
+        return datetime.strptime(raw, "%y%m%d").date()
     except Exception:
         logger.warning("No se pudo extraer fecha contable de '%s'", nombre)
         return None
@@ -64,10 +64,14 @@ def build_orchestrator() -> ExistenciasProcessingOrchestrator:
     Ajusta las firmas si tus servicios/constructores cambian.
     """
     paths = ExistenciasPathManager.from_settings()
+
+    # Infraestructura
     reader = ExistenciasTxtReader(paths)
+    writer = ExistenciasTxtWriter(paths)
+
+    # Aplicación
     parser = ExistenciasParserService(reader)
     aggregator = ExistenciasAggregatorService()
-    writer = ExistenciasTxtWriter(paths)
     output = ExistenciasOutputService(writer)
 
     return ExistenciasProcessingOrchestrator(
