@@ -1,0 +1,19 @@
+# Entornos
+.env
+*.env
+
+# Logs
+*.log
+
+# Salidas del proyecto
+/output_*/  
+*.txt
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# .gitignore
+venv/
+__pycache__/
+*.pyc
+.DS_Store
