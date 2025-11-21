@@ -41,22 +41,9 @@ def _parse_fecha_arg(fecha_str: str | None) -> date | None:
     raise ValueError(f"Formato de fecha no soportado: {fecha_str}")
 
 
-def _extract_fecha_from_filename(nombre: str) -> date | None:
-    """
-    Nombre: VYBUCTG2510160601EU.TXT
-                   ^^^^^^
-                 ddmmyy = posiciones 7..12 (0-based)
-
-    VYBU (4) + IATA (3) => empezamos en 7, tomamos 6.
-    """
-    stem = Path(nombre).stem.upper()
-    try:
-        raw = stem[4 + 3 : 4 + 3 + 6]  # 7..12
-        return datetime.strptime(raw, "%y%m%d").date()
-    except Exception:
-        logger.warning("No se pudo extraer fecha contable de '%s'", nombre)
-        return None
-
+def _extract_fecha_from_filename(nombre: str) -> Optional[date]:
+    fecha_contable = FechaContable.from_filename(nombre)
+    return fecha_contable.value if fecha_contable else None
 
 def build_orchestrator() -> ExistenciasProcessingOrchestrator:
     """
@@ -78,6 +65,8 @@ def build_orchestrator() -> ExistenciasProcessingOrchestrator:
         parser=parser,
         aggregator=aggregator,
         output=output,
+        reader=reader,
+        path_manager=paths,
     )
 
 # ---------- Modo watcher ----------

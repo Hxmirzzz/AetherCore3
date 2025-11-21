@@ -1,8 +1,9 @@
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, date
-from typing import List
+from typing import List, Optional
 import logging
+import shutil
 
 from src.application.interfaces.i_existencias_parser import IExistenciasParser
 from src.domain.entities.existencias import (
@@ -17,7 +18,6 @@ from src.infrastructure.file_system.existencias_txt_reader import ExistenciasTxt
 
 logger = logging.getLogger(__name__)
 
-
 class ExistenciasParserService(IExistenciasParser):
     """
     Servicio de aplicación que:
@@ -28,51 +28,13 @@ class ExistenciasParserService(IExistenciasParser):
     def __init__(self, reader: ExistenciasTxtReader) -> None:
         self._reader = reader
 
-    # ---------- API de alto nivel para el orchestrator ----------
-
-    def obtener_archivos_del_dia(self, fecha: date) -> List[ArchivoExistenciasOrigen]:
-        """
-        Devuelve todos los archivos de existencias (origen) para la fecha indicada,
-        ya parseados como ArchivoExistenciasOrigen.
-        La fecha se determina a partir del nombre del archivo (ddmmyy).
-        """
-        # 1) Pedimos TODOS los archivos en la carpeta de origen
-        paths: List[Path] = self._reader.listar_archivos_en_origen()
-
-        archivos: List[ArchivoExistenciasOrigen] = []
-
-        for p in paths:
-            fecha_archivo = self._extract_fecha_from_filename(p.name)
-            if fecha_archivo is None:
-                logger.warning("No se pudo extraer fecha para archivo %s, se omite", p.name)
-                continue
-
-            if fecha_archivo != fecha:
-                continue
-
-            try:
-                archivos.append(self.parse(p))
-            except Exception as ex:
-                logger.error("Error parseando archivo %s: %s", p, ex)
-
-        return archivos
-
-    # ---------- Parse de un solo archivo ----------
-
     def parse(self, path: Path) -> ArchivoExistenciasOrigen:
         lines = self._read_lines(path)
         if not lines:
             raise ValueError(f"Archivo vacio: {path}")
 
-        header_line = lines[0]
-        header = self._parse_header(header_line)
-        detalles: List[PlanoExistenciasDetalle] = []
-
-        for line in lines[1:]:
-            if not line.strip():
-                continue
-            detalle = self._parse_detalle(line)
-            detalles.append(detalle)
+        header = self._parse_header(lines[0])
+        detalles = [self._parse_detalle(ln) for ln in lines[1:]]
 
         if not detalles:
             raise ValueError(f"Archivo sin registros 02: {path}")
@@ -103,8 +65,7 @@ class ExistenciasParserService(IExistenciasParser):
         if "/" in fecha_str:
             fecha = FechaContable.from_ddmmyyyy(fecha_str)
         else:
-            dt = datetime.strptime(fecha_str, "%d%m%y").date()
-            fecha = FechaContable(dt)
+            fecha = FechaContable.from_yymmdd(fecha_str)
 
         codigo_transportadora = parts[4].strip()
         nit_cliente = parts[5].strip()
@@ -176,20 +137,12 @@ class ExistenciasParserService(IExistenciasParser):
         )
 
     def _extract_fecha_from_filename(self, nombre: str) -> Optional[date]:
-        """
-        Extrae la fecha contable desde el nombre de archivo.
+        fecha_contable = FechaContable.from_filename(nombre)
+        return fecha_contable.value if fecha_contable else None
 
-        Ejemplo: VYBUCTG2510160601EU.TXT
-                        ^^^^^^
-                     ddmmyy en posiciones 7..12 (0-based).
+    def mover_a_gestionados(self, path: Path) -> None:
+        destino_base = self._reader.path_manager.origen_gestionados
+        destino_base.mkdir(parents=True, exist_ok=True)
 
-        VYBU (4) + IATA (3) => empezamos en 7, tomamos 6.
-        """
-        stem = Path(nombre).stem.upper()
-        try:
-            raw = stem[4 + 3 : 4 + 3 + 6]  # 7..12
-            dt = datetime.strptime(raw, "%y%m%d").date()
-            return dt
-        except Exception:
-            logger.warning("No se pudo parsear fecha desde nombre de archivo: %s", nombre)
-            return None
+        destino = destino_base / path.name
+        shutil.move(str(path), str(destino))

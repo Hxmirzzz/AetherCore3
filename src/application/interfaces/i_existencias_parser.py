@@ -6,5 +6,5 @@ from src.domain.entities.existencias import ArchivoExistenciasOrigen
 class IExistenciasParser(ABC):
     @abstractmethod
     def parse(self, path: Path) -> ArchivoExistenciasOrigen:
-        """Parsea un TXT de existencias (01 + 02s) a entidad de dominio."""
-        raise NotImplementedError
+        """Parsea UN archivo TXT a entidad de dominio."""
+        ...

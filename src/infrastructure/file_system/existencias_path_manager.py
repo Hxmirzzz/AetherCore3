@@ -31,7 +31,7 @@ class ExistenciasPathManager:
         """
         Carpeta donde moveremos los TXT origen ya procesados
         """
-        return self.origen_planos / "gestionados"
+        return self.origen_planos / "GESTIONADOS"
 
     # ---------- Rutas NACIONAL ----------
 
