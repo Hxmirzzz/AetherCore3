@@ -50,12 +50,20 @@ class ArchivoExistenciasOrigen:
     @property
     def tipo_valor(self) -> TipoValor:
         """
-        Si hay detalles, usamos el TipoValor del primer detalle.
-        Si no, caemos al código de divisa del header.
+        Retorna el tipo de valor del archivo.
+        VALIDA que todos los detalles tengan el mismo tipo.
         """
-        if self.detalles:
-            return self.detalles[0].tipo_valor
-        return TipoValor.from_codigo(self.header.codigo_divisa)
+        if not self.detalles:
+            return TipoValor.from_codigo(self.header.codigo_divisa)
+
+        tipos = {d.tipo_valor for d in self.detalles}
+        
+        if len(tipos) > 1:
+            raise ValueError(
+                f"Archivo {self.nombre_archivo} tiene múltiples tipos de valor: {tipos}"
+            )
+        
+        return self.detalles[0].tipo_valor
 
 
 @dataclass
@@ -112,8 +120,8 @@ class PlanoExistenciasNacional:
 
                 # 8 pares valor/cantidad → 16 campos
                 for ds in denoms[:max_slots]:
-                    campos.append(str(ds.valor) if ds.valor != 0 else "")
-                    campos.append(str(ds.cantidad) if ds.cantidad != 0 else "")
+                    campos.append(str(ds.valor) or "")
+                    campos.append(str(ds.cantidad) or "")
 
                 line_02 = ",".join(campos)
                 lines.append(line_02)

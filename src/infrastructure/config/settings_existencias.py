@@ -21,7 +21,6 @@ class ExistenciasPaths:
 class ExistenciasSettings:
     paths: ExistenciasPaths
 
-
 def get_existencias_settings() -> ExistenciasSettings:
     """
     Carga configuración de existencias desde variables de entorno.
@@ -46,3 +45,17 @@ def get_existencias_settings() -> ExistenciasSettings:
             log_dir=Path(log_dir),
         )
     )
+
+def validate_and_create_dirs(settings: ExistenciasSettings) -> None:
+    """Crea directorios necesarios si no existen."""
+    dirs_to_create = [
+        settings.paths.origen_planos,
+        settings.paths.origen_nacional,
+        settings.paths.log_dir,
+        settings.paths.origen_planos / "GESTIONADOS",
+        settings.paths.origen_planos / "ERRORES",
+    ]
+
+    for d in dirs_to_create:
+        d.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Directorio verificado/creado: {d}")

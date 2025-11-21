@@ -48,21 +48,24 @@ class ExistenciasPathManager:
         """
         return self.nacional_folder_for_date(fecha) / "COPIAS"
 
-    def nacional_filename(self, fecha: FechaContable, tipo_valor: TipoValor) -> Path:
+    def nacional_filename(
+        self,
+        fecha: FechaContable,
+        tipo_valor: TipoValor,
+        timestamp: datetime | None = None,
+    ) -> Path:
         """
-        Nombre del archivo nacional:
-
-        VYBUBOG<YYMMDD><HHMI><TV>.TXT
-
-        - Siempre ciudad BOG (centralizado).
-        - YYMMDD tomado de la fecha contable.
-        - HHMI de la hora de generación (ahora).
-        - TV = abreviatura (CU, EU, etc.).
+        Genera nombre: VYBUBOG<yymmddhhmm><TV>.TXT
+        
+        Args:
+            timestamp: Fecha/hora de generación. Si None, usa datetime.now()
         """
-        hoy_hora = datetime.now().strftime("%H%M")
-        yymmdd = fecha.to_yymmdd()
+        if timestamp is None:
+            timestamp = datetime.now()
+        
+        yymmddhhmm = timestamp.strftime("%y%m%d%H%M")
         tv = tipo_valor.abreviatura
-        return f"VYBUBOG{yymmdd}{hoy_hora}{tv}.TXT"
+        return f"VYBUBOG{yymmddhhmm}{tv}.TXT"
 
     def nacional_main_path(self, fecha: FechaContable, tipo_valor: TipoValor) -> Path:
         """
