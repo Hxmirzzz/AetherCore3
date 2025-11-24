@@ -4,6 +4,8 @@ from datetime import datetime, date
 import logging
 from pathlib import Path
 
+from src.domain.constants import NomenclaturaArchivo as NA
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -47,7 +49,7 @@ class FechaContable:
         """
         try:
             stem = Path(nombre).stem.upper()
-            fecha_str = stem[7:13]
+            fecha_str = stem[NA.FECHA_START:NA.FECHA_END]
             return FechaContable.from_yymmdd(fecha_str)
         except Exception:
             logger.warning("No se pudo extraer fecha desde nombre de archivo: %s", nombre)

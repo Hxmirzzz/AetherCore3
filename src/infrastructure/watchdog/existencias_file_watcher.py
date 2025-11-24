@@ -6,6 +6,7 @@ import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+from src.domain.constants import NomenclaturaArchivo as NA
 from src.infrastructure.file_system.existencias_path_manager import ExistenciasPathManager
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ class ExistenciasEventHandler(FileSystemEventHandler):
 
         path = Path(event.src_path)
         # Solo nos interesan archivos .txt
-        if path.suffix.lower() != ".txt":
+        if path.suffix.lower() != NA.EXTENSION.lower():
             return
 
         logger.info("Nuevo archivo de existencias detectado: %s", path)

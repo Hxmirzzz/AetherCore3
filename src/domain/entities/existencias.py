@@ -4,7 +4,7 @@ from typing import List
 
 from src.domain.value_objects.tipo_valor import TipoValor
 from src.domain.value_objects.fecha_contable import FechaContable
-
+from src.domain.constants import EstructuraDetalle as ED
 
 @dataclass
 class PlanoExistenciasHeader:
@@ -105,7 +105,7 @@ class PlanoExistenciasNacional:
             # Líneas 02
             for d in archivo.detalles:
                 denoms = d.denominaciones
-                max_slots = 8  # 8 denominaciones como máximo
+                max_slots = ED.MAX_DENOMINACIONES
 
                 if len(denoms) < max_slots:
                     denoms = denoms + [DenominacionSaldo(0, 0)] * (max_slots - len(denoms))

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 import logging
 
+from src.domain.constants import NomenclaturaArchivo as NA
 from src.infrastructure.file_system.existencias_path_manager import ExistenciasPathManager
 from src.domain.value_objects.fecha_contable import FechaContable
 from src.domain.value_objects.tipo_valor import TipoValor
@@ -46,7 +47,7 @@ class ExistenciasTxtReader:
 
         return sorted(
             p for p in base.iterdir()
-            if p.is_file() and p.suffix.lower() == ".txt"
+            if p.is_file() and p.suffix.lower() == NA.EXTENSION.lower()
         )
 
     # --------------------------------------------------------------------- #

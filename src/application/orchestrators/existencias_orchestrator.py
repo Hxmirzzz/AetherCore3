@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from datetime import date
+from typing import Optional
 import logging
 import shutil
 
@@ -184,7 +185,7 @@ class ExistenciasProcessingOrchestrator:
             destino_dir.mkdir(exist_ok=True)
             destino = destino_dir / path.name
 
-            if destino.exist_ok():
+            if destino.exists():
                 logger.warning(f"Archivo ya existe en errores, sobreescribiendo: {destino.name}")
                 destino.unlink()
 

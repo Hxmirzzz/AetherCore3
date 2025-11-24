@@ -1,19 +1,21 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
+from src.domain.constants import CodigosDivisa as CD
+
 TIPO_VALOR_MAP = {
-    1: "CU",   # Billete COP
-    2: "CB",   # Moneda metálica COP
-    3: "DA",   # Dólar americano
-    4: "DC",   # Dólar canadiense
-    5: "FF",
-    6: "MA",
-    7: "FS",
-    8: "YJ",
-    9: "LE",
-    14: "CH",
-    24: "EU",
-    51: "SD",
+    CD.CU: "CU",   # Billete COP
+    CD.CB: "CB",   # Moneda metálica COP
+    CD.DA: "DA",   # Dólar americano
+    CD.DC: "DC",   # Dólar canadiense
+    CD.FF: "FF",
+    CD.MA: "MA",
+    CD.FS: "FS",
+    CD.YJ: "YJ",
+    CD.LE: "LE",
+    CD.CH: "CH",
+    CD.EU: "EU",
+    CD.SD: "SD",
 }
 
 @dataclass(frozen=True)

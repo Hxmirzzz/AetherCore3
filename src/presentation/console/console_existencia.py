@@ -2,12 +2,14 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime
 from pathlib import Path
+from typing import Optional
 import logging
 
 from src.application.orchestrators.existencias_orchestrator import (
     ExistenciasProcessingOrchestrator,
     ExistenciasOrchestratorOptions,
 )
+from src.domain.value_objects.fecha_contable import FechaContable
 from src.application.services.existencias_parser_service import ExistenciasParserService
 from src.application.services.existencias_aggregator_service import ExistenciasAggregatorService
 from src.application.services.existencias_output_service import ExistenciasOutputService

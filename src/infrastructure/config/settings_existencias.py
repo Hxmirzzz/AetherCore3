@@ -3,9 +3,12 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from dotenv import load_dotenv
+import logging
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 load_dotenv(ROOT_DIR / ".env")
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class ExistenciasPaths:

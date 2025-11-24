@@ -14,6 +14,7 @@ from src.domain.entities.existencias import (
 )
 from src.domain.value_objects.tipo_valor import TipoValor
 from src.domain.value_objects.fecha_contable import FechaContable
+from src.domain.constants import TiposRegistro, LongitudesRegistro
 from src.infrastructure.file_system.existencias_txt_reader import ExistenciasTxtReader
 
 logger = logging.getLogger(__name__)
@@ -51,12 +52,12 @@ class ExistenciasParserService(IExistenciasParser):
 
     def _parse_header(self, line: str) -> PlanoExistenciasHeader:
         parts = line.split(",")
-        if len(parts) < 11:
-            raise ValueError(f"Registro 01 con longitud invalida ({len(parts)}): {line}")
+        if len(parts) < LongitudesRegistro.MIN_CAMPOS_HEADER:
+            raise ValueError(f"Registro 01 debe tener al menos {LongitudesRegistro.MIN_CAMPOS_HEADER} campos")
 
         tipo_registro = parts[0].strip()
-        if tipo_registro != "01":
-            raise ValueError(f"Registro 01 con tipo invalido ({tipo_registro}): {line}")
+        if tipo_registro != TiposRegistro.HEADER:
+            raise ValueError(f"Esperaba tipo {TiposRegistro.HEADER}, recibió {tipo_registro}")
 
         codigo_dane_ciudad = parts[1].strip()
         nombre_ciudad = parts[2].strip()
@@ -139,10 +140,3 @@ class ExistenciasParserService(IExistenciasParser):
     def _extract_fecha_from_filename(self, nombre: str) -> Optional[date]:
         fecha_contable = FechaContable.from_filename(nombre)
         return fecha_contable.value if fecha_contable else None
-
-    def mover_a_gestionados(self, path: Path) -> None:
-        destino_base = self._reader.path_manager.origen_gestionados
-        destino_base.mkdir(parents=True, exist_ok=True)
-
-        destino = destino_base / path.name
-        shutil.move(str(path), str(destino))

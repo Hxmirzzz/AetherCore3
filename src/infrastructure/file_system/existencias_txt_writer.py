@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 import logging
 
+from src.domain.constants import Encoding as E
 from src.domain.entities.existencias import PlanoExistenciasNacional
 from .existencias_path_manager import ExistenciasPathManager
 
@@ -39,9 +40,9 @@ class ExistenciasTxtWriter:
             os.rename(main_path, backup_path)
 
         lines = plano.to_lines()
-        with main_path.open("w", encoding="utf-8", newline="\n") as f:
+        with main_path.open("w", encoding=E.DEFAULT, newline=E.NEWLINE) as f:
             for line in lines:
-                f.write(line + "\n")
+                f.write(line + E.NEWLINE)
 
         logger.info("Archivo nacional generado: %s", main_path)
         return main_path
