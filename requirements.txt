@@ -1,0 +1,6 @@
+pandas
+openpyxl
+python-dotenv
+watchdog
+colorama
+pytest

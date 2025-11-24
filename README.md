@@ -109,6 +109,26 @@ AetherCore3/
 │   ├── shared/result.py
 │   └── presentation/console/console_existencia.py
 │
+├── tests/
+|   ├── conftest.py              # Fixtures compartidos
+|   ├── unit/                    # Tests unitarios
+|   │   ├── domain/
+|   │   │   ├── test_fecha_contable.py
+|   │   │   ├── test_tipo_valor.py
+|   │   │   └── test_existencias_entities.py
+|   │   └── application/
+|   │       ├── test_parser_service.py
+|   │       └── test_aggregator_service.py
+|   ├── integration/             # Tests de integración
+|   │   ├── test_parser_con_reader.py
+|   │   └── test_orchestrator.py
+|   └── fixtures/                # Archivos de prueba
+|      ├── archivos_origen/
+|      │   ├── VYBUBOG2511210750CU.TXT
+|      │   └── VYBUCTG2511210752EU.TXT
+|      └── expected_output/
+|         └── VYBUBOG2511210800CU.TXT
+|
 ├── config/
 ├── .env / .env.example
 ├── requirements.txt

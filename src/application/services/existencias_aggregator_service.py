@@ -53,6 +53,27 @@ class ExistenciasAggregatorService(IExistenciasAggregator):
         self,
         archivos: Iterable[ArchivoExistenciasOrigen],
     ) -> PlanoExistenciasNacional:
+        """
+        Construye un plano nacional a partir de archivos de origen.
+        
+        Todos los archivos deben compartir la misma fecha contable y tipo de valor.
+        Si hay inconsistencias, lanza ValueError.
+        
+        Args:
+            archivos: Iterable de archivos de origen a agregar.
+            
+        Returns:
+            PlanoExistenciasNacional con todos los bloques concatenados.
+            
+        Raises:
+            ValueError: Si los archivos tienen fechas o tipos de valor diferentes.
+            ValueError: Si no se reciben archivos.
+            
+        Example:
+            >>> archivos = [archivo_bog, archivo_ctg]
+            >>> plano = aggregator.build_nacional(archivos)
+            >>> print(plano.tipo_valor.abreviatura)  # "CU"
+        """
         archivos_list = list(archivos)
         if not archivos_list:
             raise ValueError("No se recibieron archivos para agregación.")
