@@ -1,19 +1,58 @@
-# Entornos
-.env
-*.env
-
-# Logs
-*.log
-
-# Salidas del proyecto
-/output_*/  
-*.txt
-
-# Jupyter notebooks
-.ipynb_checkpoints/
-
-# .gitignore
-venv/
+# Python
 __pycache__/
-*.pyc
-.DS_Store
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Project specific
+.env
+
+# Test fixtures - Ignore all .txt files in fixtures directories
+tests/fixtures/**/*.txt
+
+# But keep the directory structure
+!tests/fixtures/
+!tests/fixtures/**/
+
+# Allow all Python files
+!tests/**/*.py
+
+# Allow other non-txt files in fixtures
+!tests/fixtures/**/*.py
+!tests/fixtures/**/*.md
+!tests/fixtures/**/*.json
+!tests/fixtures/**/*.yaml
+!tests/fixtures/**/*.yml
