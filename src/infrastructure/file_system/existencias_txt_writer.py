@@ -5,6 +5,7 @@ import logging
 
 from src.domain.constants import Encoding as E
 from src.domain.entities.existencias import PlanoExistenciasNacional
+from src.shared.text_utils import normalizar_texto
 from .existencias_path_manager import ExistenciasPathManager
 
 logger = logging.getLogger(__name__)
@@ -40,9 +41,17 @@ class ExistenciasTxtWriter:
             os.rename(main_path, backup_path)
 
         lines = plano.to_lines()
+        
+        mantener_especiales = self._paths.mantener_caracteres_especiales
+        lines_normalizadas = [
+            normalizar_texto(line, mantener_especiales)
+            for line in lines
+        ]
+
         with main_path.open("w", encoding=E.DEFAULT, newline=E.NEWLINE) as f:
-            for line in lines:
+            for line in lines_normalizadas:
                 f.write(line + E.NEWLINE)
 
-        logger.info("Archivo nacional generado: %s", main_path)
+        modo = "CON" if mantener_especiales else "SIN"
+        logger.info(f"Archivo nacional generado {modo} caracteres especiales: {main_path}")
         return main_path

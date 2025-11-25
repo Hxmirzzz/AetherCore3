@@ -1,0 +1,32 @@
+# .gitattributes
+
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Scripts de shell siempre con LF (para Linux/Mac)
+*.sh text eol=lf
+
+# Scripts de Windows siempre con CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Python siempre con LF
+*.py text eol=lf
+
+# Archivos de configuración con LF
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Archivos binarios (no convertir)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary

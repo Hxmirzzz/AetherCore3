@@ -17,6 +17,7 @@ class ExistenciasPathManager:
     """
     origen_planos: Path
     origen_nacional: Path
+    mantener_caracteres_especiales: bool = True
 
     @classmethod
     def from_settings(cls) -> "ExistenciasPathManager":
@@ -24,6 +25,7 @@ class ExistenciasPathManager:
         return cls(
             origen_planos=cfg.paths.origen_planos,
             origen_nacional=cfg.paths.origen_nacional,
+            mantener_caracteres_especiales=cfg.config.mantener_caracteres_especiales,
         )
 
     @property

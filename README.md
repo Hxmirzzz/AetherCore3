@@ -222,6 +222,24 @@ EXISTENCIAS_WATCH_INTERVAL=5
 - **Nacional por fecha**: `...\NACIONAL\YYMMDD\VYBUBOGYYMMDDHHMITV.TXT`
 - **Copias** (para versiones previas): `...\NACIONAL\YYMMDD\COPIAS\VYBUBOG..._timestamp.TXT`
 
+### 3. Caracteres Especiales
+
+Por defecto, el sistema **mantiene** caracteres especiales (á, é, í, ó, ú, ñ, etc.).
+
+Si necesitas limpiar estos caracteres para compatibilidad con sistemas legacy:
+```env
+EXISTENCIAS_MANTENER_CARACTERES_ESPECIALES=false
+```
+
+**Ejemplos:**
+
+| Modo | Entrada | Salida |
+|------|---------|--------|
+| `true` (default) | DÓLAR | DÓLAR |
+| `false` | DÓLAR | DOLAR |
+| `true` | NIÑO | NIÑO |
+| `false` | NIÑO | NINO |
+
 ---
 
 ## 📁 Estructura de Carpetas

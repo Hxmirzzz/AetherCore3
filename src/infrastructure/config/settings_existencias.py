@@ -21,8 +21,16 @@ class ExistenciasPaths:
     log_dir: Path
 
 @dataclass
+class ExistenciasConfig:
+    """
+    Configuración general de procesamiento.
+    """
+    mantener_caracteres_especiales: bool = True
+
+@dataclass
 class ExistenciasSettings:
     paths: ExistenciasPaths
+    config: ExistenciasConfig
 
 def get_existencias_settings() -> ExistenciasSettings:
     """
@@ -32,7 +40,7 @@ def get_existencias_settings() -> ExistenciasSettings:
     - En DEV/local/git: usamos defaults relativos a la raíz del repo,
       así no quedan rutas duras en el código.
     """
-    # Defaults neutros (no exponemos rutas reales de producción)
+    # Defaults neutros
     origen_default = ROOT_DIR / "data" / "existencias" / "planos"
     nacional_default = ROOT_DIR / "data" / "existencias" / "nacional"
     log_default = ROOT_DIR / "logs" / "existencias"
@@ -41,11 +49,17 @@ def get_existencias_settings() -> ExistenciasSettings:
     nacional = os.getenv("EXISTENCIAS_NACIONAL_DIR", str(nacional_default))
     log_dir = os.getenv("EXISTENCIAS_LOG_DIR", str(log_default))
 
+    mantener_especiales_str = os.getenv("EXISTENCIAS_MANTENER_CARACTERES_ESPECIALES", "true").lower()
+    mantener_especiales = mantener_especiales_str in ("true", "1", "yes", "si", "sí")
+    
     return ExistenciasSettings(
         paths=ExistenciasPaths(
             origen_planos=Path(origen),
             origen_nacional=Path(nacional),
             log_dir=Path(log_dir),
+        ),
+        config=ExistenciasConfig(
+            mantener_caracteres_especiales=mantener_especiales
         )
     )
 

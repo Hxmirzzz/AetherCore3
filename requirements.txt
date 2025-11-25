@@ -4,3 +4,4 @@ python-dotenv
 watchdog
 colorama
 pytest
+unicode
