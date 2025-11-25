@@ -155,9 +155,13 @@ class ExistenciasProcessingOrchestrator:
 
     def _mover_a_gestionados(self, path: Path) -> None:
         """
-        Mueve un archivo procesado correctamente a la carpeta gestionados.
+        Mueve un archivo procesado correctamente a la carpeta GESTIONADOS.
         
-        Ruta destino: PLANOS/GESTIONADOS/
+        Args:
+            path: Ruta del archivo a mover
+            
+        Raises:
+            Exception: Si no se puede mover el archivo (loguea el error)
         """
         try:
             destino_dir = self._paths.origen_gestionados
@@ -177,8 +181,14 @@ class ExistenciasProcessingOrchestrator:
         """
         Mueve un archivo con errores a la carpeta ERRORES.
         
-        Ruta destino: PLANOS/ERRORES/
-        Crea un archivo .log con el detalle del error.
+        Crea un archivo .log con el detalle del error para debugging.
+        
+        Args:
+            path: Ruta del archivo con error
+            error: Excepción capturada durante el procesamiento
+            
+        Raises:
+            Exception: Si no se puede mover el archivo (loguea el error)
         """
         try:
             destino_dir = self._paths.origen_planos / "ERRORES"

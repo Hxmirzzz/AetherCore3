@@ -101,6 +101,19 @@ def main():
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
 
+    from src.infrastructure.config.settings_existencias import (
+        get_existencias_settings,
+        validate_and_create_dirs
+    )
+
+    try:
+        settings = get_existencias_settings()
+        validate_and_create_dirs(settings)
+        logger.info("Directorios verificados correctamente")
+    except Exception as e:
+        logger.error("Error verificando directorios: {e}")
+        return
+
     orch = build_orchestrator()
 
     if args.watch:

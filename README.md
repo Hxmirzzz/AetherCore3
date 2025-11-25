@@ -1,5 +1,39 @@
 # Aplicación de Existencias Centralizadas (AetherCore 3)
 
+![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
+![Tests](https://github.com/tu-usuario/aethercore3/workflows/Tests/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
+```
+
+---
+
+#### **9. Agregar archivo LICENSE**
+
+Crear `LICENSE`:
+```
+MIT License
+
+Copyright (c) 2025 Hxmir (Hamir)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ## Descripción General
 
 Esta aplicación en Python automatiza el procesamiento de planos de existencias de billete enviados por diferentes
@@ -56,6 +90,25 @@ datos clave (cliente, ciudad, fecha/hora, tipo de valor).
 > completa. En CSV esto significa dejar comas consecutivas cuando un valor está vacío (`02,24,Euro,2,Buen Estado,500,0,200,11,,,,,,,`).
 
 En el TXT nacional, la app respeta la misma filosofía: cuando valor o cantidad son 0 se escribe vacío.
+
+## 📅 Formatos de Fecha
+
+### Archivos Origen (Entrada)
+- **Nombre del archivo**: `yymmdd` (ej: `251121` = 21 de noviembre de 2025)
+- **Contenido del archivo**: `yymmdd` (ej: `251121`)
+
+### Archivos Nacionales (Salida)
+- **Nombre del archivo**: `yymmddhhmm` (ej: `2511210750` = 21/11/2025 07:50)
+- **Contenido del archivo**: `dd/mm/yyyy` (ej: `21/11/2025`)
+
+**Ejemplo de transformación:**
+```
+Entrada:  VYBUBOG2511210750CU.TXT
+Contenido entrada: 01,11001,BOGOTA,251121,BRK,...
+
+Salida:   VYBUBOG2511210830CU.TXT
+Contenido salida: 01,11001,BOGOTA,21/11/2025,BRK,...
+```
 
 ### 🎯 Objetivo del módulo
 
@@ -171,6 +224,37 @@ EXISTENCIAS_WATCH_INTERVAL=5
 
 ---
 
+## 📁 Estructura de Carpetas
+```
+CERTIFICACIONES/NOMBRE_ENTIDAD/
+├── EXISTENCIAS/
+│   └── PLANOS/
+│       ├── *.TXT                    # Archivos origen (entrada)
+│       ├── GESTIONADOS/             # Archivos procesados correctamente
+│       │   └── *.TXT                # (movidos automáticamente)
+│       └── ERRORES/                 # Archivos con errores de formato
+│           ├── *.TXT                # (movidos automáticamente)
+│           └── *_error.log          # Logs de error detallados
+│
+├── NACIONAL/
+│   └── {YYMMDD}/                    # Carpeta por fecha (ej: 251121)
+│       ├── VYBUBOG*.TXT             # Archivos nacionales
+│       └── COPIAS/                  # Versiones anteriores
+│           └── VYBUBOG*_timestamp.TXT
+│
+└── logs/                            # Logs de la aplicación
+    └── existencias/
+```
+
+### Flujo de Archivos
+
+1. **Entrada**: Archivos `.TXT` llegan a `PLANOS/`
+2. **Procesamiento**: 
+   - ✅ **Éxito** → Mueve a `PLANOS/GESTIONADOS/`
+   - ❌ **Error** → Mueve a `PLANOS/ERRORES/` + genera `*_error.log`
+3. **Salida**: Genera archivo nacional en `NACIONAL/{YYMMDD}/`
+4. **Backup**: Si ya existía un nacional → mueve versión anterior a `COPIAS/`
+
 ## 🔧 Instalación
 
 ```bash
@@ -210,6 +294,48 @@ python -m src.presentation.console.console_existencia --watch
 - Cada archivo debe tener 1 registro tipo 01 y ≥1 registro tipo 02.
 - Si faltan campos críticos se registra el error (y puedes moverlo a una carpeta de errores si se extiende).
 - La fecha contable oficial es la del header (no la del nombre de archivo).
+
+---
+
+## ⚠️ Casos Especiales
+
+### Corrección de Archivos
+
+Si un archivo origen necesita ser corregido:
+
+1. El archivo original ya fue procesado y está en `GESTIONADOS/`
+2. Coloca el archivo corregido en `PLANOS/` con el **mismo nombre**
+3. El sistema:
+   - Procesa el archivo corregido
+   - Mueve el nacional actual a `COPIAS/`
+   - Genera un nuevo nacional con los datos corregidos
+   - Mueve el archivo corregido a `GESTIONADOS/` (sobrescribiendo)
+
+### Manejo de Errores
+
+Archivos que **no** pueden procesarse se mueven a `ERRORES/`:
+
+- Archivo vacío
+- Falta registro tipo 01 (header)
+- Falta registros tipo 02 (detalles)
+- Formato de campos inválido
+- Tipos de valor múltiples en un mismo archivo
+
+Para cada archivo con error se genera un log: `{nombre_archivo}_error.log`
+
+**Ejemplo de log de error:**
+```
+Archivo: VYBUBOG2511210750CU.TXT
+Fecha procesamiento: 2025-11-22
+Error: ValueError
+Detalle: Registro 01 con longitud invalida (9)
+```
+
+### Múltiples Sucursales
+
+- **Por día**: Puede haber múltiples archivos de diferentes ciudades
+- **Por tipo de valor**: Un archivo CU de BOG + un archivo CU de CTG → 1 archivo nacional CU
+- **Restricción**: Solo un archivo por sucursal/tipo/día
 
 ---
 
