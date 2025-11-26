@@ -3,7 +3,6 @@ from pathlib import Path
 from datetime import datetime, date
 from typing import List, Optional
 import logging
-import shutil
 
 from src.application.interfaces.i_existencias_parser import IExistenciasParser
 from src.domain.entities.existencias import (
@@ -15,6 +14,7 @@ from src.domain.entities.existencias import (
 from src.domain.value_objects.tipo_valor import TipoValor
 from src.domain.value_objects.fecha_contable import FechaContable
 from src.domain.constants import TiposRegistro, LongitudesRegistro
+from src.shared.text_utils import leer_archivo_con_encoding_auto
 from src.infrastructure.file_system.existencias_txt_reader import ExistenciasTxtReader
 
 logger = logging.getLogger(__name__)
@@ -47,8 +47,20 @@ class ExistenciasParserService(IExistenciasParser):
         )
 
     def _read_lines(self, path: Path) -> list[str]:
-        with path.open("r", encoding="utf-8", errors="ignore") as f:
-            return [ln.strip("\n") for ln in f]
+        """
+        Lee las líneas del archivo detectando automáticamente el encoding.
+        
+        Soporta:
+        - UTF-8
+        - ANSI (Windows-1252)
+        - Otros encodings detectados automáticamente
+        """
+        try:
+            contenido = leer_archivo_con_encoding_auto(path)
+            return contenido.splitlines()
+        except Exception as e:
+            logger.error(f"No se pudo leer el archivo {path}: {e}")
+            raise
 
     def _parse_header(self, line: str) -> PlanoExistenciasHeader:
         parts = line.split(",")
